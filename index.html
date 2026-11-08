@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avalon Cargo — Cotação de frete</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/avalon.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 60 44" fill="none"><path d="M30 2 L50 36 L38 36 L33 27 L30 32 L27 27 L22 36 L10 36 Z" fill="#9E1B32"/><path d="M2 38 Q30 30 58 40 Q30 36 2 40 Z" fill="#9E1B32"/></svg>
+    <div><div class="t1">AVALON</div><div class="t2">CARGO</div></div>
+  </div>
+  <div class="nav">
+    <span class="user-chip" id="userChip" style="display:none"></span>
+    <button id="navCliente" class="active" onclick="go('cliente')">Solicitar cotação</button>
+    <button id="navInterno" onclick="go('fila')">Área Avalon <span class="pill" id="pillQtd" style="display:none">0</span></button>
+    <button id="navDash" style="display:none" onclick="go('dash')">Dashboard</button>
+    <button id="navParams" style="display:none" onclick="go('params')">Parâmetros</button>
+    <button id="btnSair" style="display:none" onclick="logout()">Sair</button>
+  </div>
+</div>
+
+<!-- ================= VISTA CLIENTE ================= -->
+<div class="view on wrap" id="v-cliente">
+  <h1 class="page">Solicite sua cotação de frete</h1>
+  <div class="sub">Preencha os dados da sua operação. Nossa equipe retorna com a proposta em poucos minutos.</div>
+
+  <div class="card"><div class="card-h black">Seus dados</div><div class="card-b">
+    <div class="g3">
+      <div><label>Empresa *</label><input id="c-empresa" placeholder="Razão social ou nome"></div>
+      <div><label>E-mail *</label><input id="c-email" type="email" placeholder="voce@empresa.com.br"></div>
+      <div><label>WhatsApp / Telefone *</label><input id="c-fone" placeholder="(13) 9…"></div>
+    </div>
+  </div></div>
+
+  <div class="card"><div class="card-h black">Operação e rota</div><div class="card-b">
+    <div class="g3">
+      <div><label>Tipo de operação</label><select id="c-oper"><option value="imp">Importação</option><option value="exp">Exportação</option><option value="cabotagem">Cabotagem</option><option value="nacional">Transferência nacional</option></select></div>
+      <div><label>Origem (cidade/UF) *</label><div class="ac-wrap"><input id="c-origem" placeholder="digite e selecione na lista" autocomplete="off"><div class="ac-list" id="ac-c-origem"></div></div></div>
+      <div><label>Destino (cidade/UF) *</label><div class="ac-wrap"><input id="c-destino" placeholder="digite e selecione na lista" autocomplete="off"><div class="ac-list" id="ac-c-destino"></div></div></div>
+    </div>
+  </div></div>
+
+  <div class="card"><div class="card-h black">Carga</div><div class="card-b">
+    <label style="margin-top:0">Equipamento *</label>
+    <div class="equip-grid" id="c-equipGrid"></div>
+    <div class="g3">
+      <div><label>Quantidade</label><input id="c-qtde" type="number" min="1" value="1"></div>
+      <div><label>Mercadoria *</label><input id="c-merc" placeholder="ex.: autopeças, fertilizante…"></div>
+      <div><label id="c-pesoLbl">Peso bruto por contêiner (kg) *</label><input id="c-peso" type="number" min="1" placeholder="ex.: 24000"></div>
+    </div>
+    <div class="g3">
+      <div id="c-m3Box" style="display:none"><label>Metragem cúbica total (m³)</label><input id="c-m3" type="number" min="0" step="0.1" placeholder="ex.: 25"></div>
+      <div><label>Valor da mercadoria (R$)</label><input id="c-nf" type="number" min="0" placeholder="para averbação do seguro"></div>
+      <div><label>Prazo de pagamento desejado</label><select id="c-prazo"><option>10</option><option>15</option><option selected>30</option><option>45</option></select></div>
+    </div>
+    <label class="chk"><input type="checkbox" id="c-imo"> Produto perigoso / químico (IMO)</label>
+    <div class="alert warn" id="c-csNote" style="display:none"><b>Carga solta:</b> cotação personalizada — envolve parceiros de terminal e condições específicas da operação. Envie a solicitação normalmente e nossa equipe retorna com a proposta sob medida.</div>
+    <div class="alert warn" id="c-ooNote" style="display:none"><b>Open Top / Flat Rack:</b> informe nas observações as dimensões da carga (C × L × A) e se excede o perfil do contêiner — pode exigir escolta ou AET.</div>
+  </div></div>
+
+  <div class="card"><div class="card-h black">Observações</div><div class="card-b">
+    <input id="c-obs" placeholder="janela de coleta, exigências, dimensões…">
+  </div></div>
+
+  <div class="alert err" id="c-err" style="display:none"></div>
+  <button class="btn block" id="c-btnEnviar" onclick="enviarCotacao()">Enviar solicitação de cotação</button>
+
+  <div class="card" id="c-okBox" style="display:none;margin-top:16px"><div class="card-b" style="text-align:center;padding:30px">
+    <div style="font-size:38px">✓</div>
+    <h2 style="margin:8px 0 6px">Cotação encaminhada!</h2>
+    <div class="sub" style="margin:0">Protocolo <b id="c-prot"></b> · Nossa equipe comercial retorna em <b>10–15 minutos</b> no e-mail/WhatsApp informado.</div>
+  </div></div>
+</div>
+
+<!-- ================= LOGIN ================= -->
+<div class="view" id="v-login">
+  <div class="login-box">
+    <div style="text-align:center;margin-bottom:18px">
+      <div class="t1" style="font-weight:800;letter-spacing:.18em;color:var(--av-gray);font-size:18px">AVALON <span style="color:var(--av-primary)">CARGO</span></div>
+      <div class="kv">Área restrita — gestão de cotações</div>
+    </div>
+    <label>E-mail</label><input id="l-user" type="email" placeholder="voce@avaloncargo.com.br" autocomplete="username">
+    <label>Senha</label><input id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+    <div class="alert err" id="l-err" style="display:none"></div>
+    <button class="btn block" id="l-btn" onclick="login()">Entrar</button>
+    <div class="hint" style="text-align:center;margin-top:10px"><a href="#" onclick="recuperarSenha();return false" style="color:var(--av-gray)">Esqueci minha senha</a></div>
+  </div>
+</div>
+
+<!-- ================= FILA INTERNA ================= -->
+<div class="view wrap" id="v-fila">
+  <div class="topo-acao">
+    <div><h1 class="page">Fila de cotações</h1><div class="sub" style="margin:0">Solicitações recebidas pelo site e cadastradas manualmente — clique para abrir a ficha</div></div>
+    <div style="display:flex;gap:8px"><button class="btn ghost sm" onclick="carregarFila()">↻ Atualizar</button><button class="btn ghost sm" onclick="novaManual()">+ Nova cotação manual</button></div>
+  </div>
+  <div class="filtros" id="filtros"></div>
+  <div id="fila"></div>
+</div>
+
+<!-- ================= FICHA INTERNA ================= -->
+<div class="view wrap" id="v-ficha">
+  <div class="topo-acao">
+    <div>
+      <h1 class="page" id="f-titulo">Cotação</h1>
+      <div class="kv" id="f-meta"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <select id="f-status" class="btn ghost sm" style="width:auto" onchange="mudarStatus(this.value)">
+        <option value="pendente">Pendente</option><option value="em_analise">Em análise</option><option value="proposta_enviada">Proposta enviada</option><option value="ganha">Ganha</option><option value="perdida">Perdida</option><option value="cancelada">Cancelada</option>
+      </select>
+      <button class="btn ghost sm" onclick="go('fila')">← Fila</button>
+      <button class="btn sm" id="f-btnCalc" onclick="motorCalcular()">↻ Recalcular rota + ANTT</button>
+    </div>
+  </div>
+
+  <div class="margem-ctl">
+    <span class="lbl">% Lucro alvo</span>
+    <input type="range" id="f-margemR" min="0" max="40" step="0.5" value="15" oninput="syncMargem(this.value);recalc(true)">
+    <input type="number" id="f-margemN" min="0" max="60" step="0.5" value="15" oninput="syncMargem(this.value);recalc(true)">
+    <span class="kv">girar aqui recalcula o <b>Frete peso</b> sugerido</span>
+  </div>
+
+  <div class="g2" style="align-items:start">
+    <div>
+      <div class="card"><div class="card-h black">Dados Gerais</div><div class="card-b">
+        <div class="g2">
+          <div><label>Cliente</label><input id="f-cliente"></div>
+          <div><label>Contato (e-mail · fone)</label><input id="f-contato"></div>
+        </div>
+        <div class="g3">
+          <div><label>Distância KM (ida e volta)</label><input id="f-km" type="number" min="0" oninput="antER()"></div>
+          <div><label>Tipo de operação</label><select id="f-oper"><option value="imp">Importação</option><option value="exp">Exportação</option><option value="cabotagem">Cabotagem</option><option value="nacional">Nacional</option></select></div>
+          <div><label>Tipo de viagem</label><select id="f-viagem"><option>Single</option><option>LS (peso)</option><option>Fracionada</option></select></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-h black">Rota e Carga</div><div class="card-b">
+        <div class="g2">
+          <div><label>Origem</label><div class="ac-wrap"><input id="f-origem" autocomplete="off"><div class="ac-list" id="ac-f-origem"></div></div></div>
+          <div><label>Destino</label><div class="ac-wrap"><input id="f-destino" autocomplete="off"><div class="ac-list" id="ac-f-destino"></div></div></div>
+        </div>
+        <div class="g3">
+          <div><label>Equipamento</label><select id="f-equip" onchange="mudarEquip()"></select></div>
+          <div><label>Quantidade</label><input id="f-qtde" type="number" min="1" value="1" oninput="antER()"></div>
+          <div><label>Peso bruto por unidade (kg)</label><input id="f-pesoKg" type="number" oninput="prefillLeve()"></div>
+        </div>
+        <div class="g2">
+          <div><label>Valor total mercadoria — averbação (R$)</label><input id="f-nf" type="number" min="0" oninput="recalc()"></div>
+          <div><label>Valor residual — Ad Valorem (R$)</label><input id="f-residual" type="number" min="0" placeholder="um OU outro" oninput="recalc()"></div>
+        </div>
+        <div class="g3">
+          <div><label>Prazo pagamento (dias)</label><input id="f-prazo" type="number" min="0" value="10"></div>
+          <div><label>Mercadoria</label><input id="f-merc" oninput="checarPolice()"></div>
+          <div id="f-m3Box"><label>Metragem cúbica (m³)</label><input id="f-m3" type="number" step="0.1" oninput="prefillLeve()"></div>
+        </div>
+        <div class="g2">
+          <label class="chk"><input type="checkbox" id="f-dta" onchange="recalc()"> É DTA? <span class="hint">(sem cálculo — tabela interna a definir)</span></label>
+          <label class="chk"><input type="checkbox" id="f-imo" onchange="prefillLeve()"> É IMO?</label>
+          <label class="chk"><input type="checkbox" id="f-seguro" checked onchange="recalc()"> Seguro RCTR-C / RC-DC</label>
+          <label class="chk"><input type="checkbox" id="f-oversize" onchange="recalc()"> Carga excede perfil (oversize)</label>
+        </div>
+        <div class="alert warn" id="f-veic" style="display:none"></div>
+        <div class="alert err" id="f-polAlert" style="display:none"></div>
+      </div></div>
+
+      <div class="card"><div class="card-h black">Consulta Tabela ANTT</div><div class="card-b">
+        <div class="g2">
+          <div><label>Tipo de carga (categoria ANTT)</label>
+            <select id="f-cat" onchange="antER()">
+              <option>Conteineirizada</option><option>Geral</option><option>Frigorificada</option>
+              <option>Perigosa Conteineirizada</option><option>Perigosa Geral</option><option>Perigosa Frigorificada</option>
+            </select></div>
+          <div><label>Número de eixos</label><select id="f-eixos" onchange="antER()"><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>9</option></select></div>
+        </div>
+        <div class="g3">
+          <label class="chk"><input type="checkbox" id="f-compv" checked> Composição veicular</label>
+          <label class="chk"><input type="checkbox" id="f-retvazio" checked onchange="antER()"> Retorno vazio</label>
+          <label class="chk"><input type="checkbox" id="f-altodes" onchange="antER()"> Alto desempenho</label>
+        </div>
+        <div class="g2" style="margin-top:10px">
+          <div><label>Piso ANTT calculado (R$/un)</label><input id="f-piso" type="number" step="0.01" oninput="pisoManual()"><div class="hint" id="f-pisoHint"></div></div>
+          <div><label>Pedágio estimado (R$/un)</label><input id="f-pedagioCalc" type="number" step="0.01" oninput="pedManual()"><div class="hint" id="f-pedHint"></div></div>
+        </div>
+      </div></div>
+    </div>
+
+    <div>
+      <div class="card"><div class="card-h green">Composição do Frete e Receitas (cobra do cliente)</div><div class="card-b">
+        <div class="g3">
+          <div><label>Frete peso (R$)</label><input id="r-frete" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Pedágio (R$) — repasse</label><input id="r-pedagio" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Adicional Margem (R$)</label><input id="r-margemAd" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Ad Valorem (R$)</label><input id="r-adval" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>GRIS (R$)</label><input id="r-gris" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Adicional peso LS (R$)</label><input id="r-ls" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Carga IMO (R$)</label><input id="r-imo" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Taxa DTA (R$)</label><input id="r-dta" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Ajudantes (R$)</label><input id="r-ajud" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Estadia (R$)</label><input id="r-estadia" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Emissão CT-e (R$)</label><input id="r-cte" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Fim de semana (R$)</label><input id="r-fds" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Urgência (R$)</label><input id="r-urg" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Feriado (R$)</label><input id="r-fer" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Plantão (R$)</label><input id="r-plantao" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Escolta (R$)</label><input id="r-escolta" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Lashing / amarração (R$)</label><input id="r-lashing" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Gen-set / energia reefer (R$)</label><input id="r-genset" type="number" step="0.01" oninput="recalc()"></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-h red">Custo de Terceiros e Outras Despesas (paga)</div><div class="card-b">
+        <div class="g3">
+          <div><label>Frete terceiro (R$)</label><input id="d-frete" type="number" step="0.01" oninput="recalc()"><div class="hint">piso ANTT × qtde + ajuste</div></div>
+          <div><label>Pedágio terceiro (R$)</label><input id="d-pedagio" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Margem terceiro (R$)</label><input id="d-margem" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Estadia terceiro (R$)</label><input id="d-estadia" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Ajudantes (R$)</label><input id="d-ajud" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Escolta / lashing / gen-set (R$)</label><input id="d-especiais" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Outras despesas (R$)</label><input id="d-outras" type="number" step="0.01" oninput="recalc()"></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-h red">Despesas com Comissões</div><div class="card-b">
+        <div class="g2">
+          <div><label>Comissão de terceiros (R$)</label><input id="d-comterc" type="number" step="0.01" oninput="recalc()"></div>
+          <div><label>Comissão de vendedores (% s/ lucro)</label><select id="d-comvend" onchange="recalc()"><option value="0">Sem comissão</option><option value="5">5%</option><option value="7.5">7,5%</option><option value="10" selected>10%</option></select></div>
+        </div>
+      </div></div>
+
+      <div class="card"><div class="card-h black">Observações</div><div class="card-b">
+        <textarea id="f-obs" rows="2" placeholder="anotações internas desta cotação…"></textarea>
+        <div class="hist" id="f-hist"></div>
+      </div></div>
+
+      <div style="font-weight:700;margin:4px 0 8px;color:var(--av-gray)">Resumo do Resultado</div>
+      <div class="resumo" id="resumo"></div>
+
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn" onclick="responder()">✓ Aprovar e gerar proposta</button>
+        <button class="btn ghost" onclick="salvarFicha()">Salvar rascunho</button>
+      </div>
+      <div class="alert ok" id="f-propBox" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DASHBOARD ================= -->
+<div class="view wrap" id="v-dash">
+  <h1 class="page">Dashboard do gestor</h1>
+  <div class="sub">Visão comercial das cotações — dados do banco em tempo real</div>
+  <div class="kpis" id="dashKpis"></div>
+  <div class="chart-grid">
+    <div class="card"><div class="card-h black">Cotações por dia (últimos 14 dias)</div><div class="card-b" id="chartBars"></div></div>
+    <div>
+      <div class="card"><div class="card-h black">Status da fila</div><div class="card-b" id="chartDonut"></div></div>
+      <div class="card"><div class="card-h black">Principais rotas</div><div class="card-b" id="topRotas"></div></div>
+      <div class="card"><div class="card-h black">Por equipamento</div><div class="card-b" id="topEquip"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PARÂMETROS ================= -->
+<div class="view wrap" id="v-params">
+  <h1 class="page">Parâmetros do gestor</h1>
+  <div class="sub">Valores usados pelo motor e pela proposta. Salvos no banco — valem para toda a equipe imediatamente.</div>
+  <div class="g2" style="align-items:start">
+    <div>
+      <div class="card"><div class="card-h black">Casco dos contêineres — valor para seguro (R$)</div><div class="card-b"><div class="g2" id="p-cascos"></div></div></div>
+      <div class="card"><div class="card-h black">Custos e seguros</div><div class="card-b">
+        <div class="g2">
+          <div><label>Comissão operacional (R$/op.)</label><input id="p-comissao" type="number"></div>
+          <div><label>Custo adm./operação (R$/op.)</label><input id="p-custoop" type="number"></div>
+          <div><label>Seguro averbação (%)</label><input id="p-seguro" type="number" step="0.001"></div>
+          <div><label>Averbação padrão sem NF (R$)</label><input id="p-averb" type="number"></div>
+          <div><label>Ad valorem geral (%)</label><input id="p-adval" type="number" step="0.01"></div>
+          <div><label>Ad valorem IMO/risco (%)</label><input id="p-advalImo" type="number" step="0.01"></div>
+          <div><label>Fator cubagem (kg/m³)</label><input id="p-cubagem" type="number"></div>
+          <div><label>Pedágio estimado (R$/km, 5 eixos)</label><input id="p-pedkm" type="number" step="0.01"></div>
+        </div>
+      </div></div>
+      <div class="card"><div class="card-h black">Tributação e margens</div><div class="card-b">
+        <div class="g3">
+          <div><label>Lucro Presumido (%)</label><input id="p-tPres" type="number" step="0.1"></div>
+          <div><label>Lucro Real (%)</label><input id="p-tReal" type="number" step="0.1"></div>
+          <div><label>Simples (%)</label><input id="p-tSimples" type="number" step="0.1"></div>
+          <div><label>Margem padrão (%)</label><input id="p-mPad" type="number" step="0.5"></div>
+          <div><label>Margem IMO/química (%)</label><input id="p-mImo" type="number" step="0.5"></div>
+        </div>
+        <div class="hint" style="margin-top:8px">Confirmar alíquotas com a contabilidade da Avalon. O resumo compara os três regimes e aponta o melhor.</div>
+      </div></div>
+    </div>
+    <div>
+      <div class="card"><div class="card-h red">Condições gerais da proposta (padrão contrato)</div><div class="card-b">
+        <div class="cg-grid">
+          <div><label>Adicional cavalo LS (% s/ frete peso)</label><input id="cg-adicional_ls_pct" type="number" step="1"></div>
+          <div><label>Descrição do adicional LS</label><input id="cg-adicional_ls_desc"></div>
+          <div><label>Horas livres carga/descarga</label><input id="cg-horas_livres"></div>
+          <div><label>Pernoite (R$)</label><input id="cg-pernoite" type="number"></div>
+          <div><label>Hora extra após horas livres (R$/h)</label><input id="cg-hora_extra" type="number"></div>
+          <div><label>Antecipação retirada contêiner (R$)</label><input id="cg-antecipacao_draft" type="number"></div>
+          <div><label>Free time (dias)</label><input id="cg-antecipacao_free_time_dias" type="number"></div>
+          <div><label>Ajudante (R$/un)</label><input id="cg-ajudante" type="number"></div>
+          <div><label>Regra mínima de ajudantes</label><input id="cg-ajudante_min"></div>
+          <div><label>Escolta</label><input id="cg-escolta"></div>
+          <div><label>Validade da proposta (dias)</label><input id="cg-validade_dias" type="number"></div>
+          <div><label>Frete morto (% s/ frete peso)</label><input id="cg-frete_morto_pct" type="number"></div>
+          <div><label>Urgência / cancelamento (% s/ frete peso)</label><input id="cg-urgencia_cancelamento_pct" type="number"></div>
+          <div><label>Prazo de pagamento padrão</label><input id="cg-pagamento"></div>
+          <div><label>Multa por atraso (%)</label><input id="cg-multa_pct" type="number" step="0.1"></div>
+          <div><label>Juros por dia de atraso (%)</label><input id="cg-juros_dia_pct" type="number" step="0.01"></div>
+          <div><label>Rastreamento</label><input id="cg-rastreamento"></div>
+          <div><label>ICMS</label><input id="cg-icms"></div>
+          <div><label>Impostos</label><input id="cg-impostos"></div>
+        </div>
+      </div></div>
+      <div class="card"><div class="card-h black">Empresa</div><div class="card-b">
+        <div class="g2">
+          <div><label>Razão social</label><input id="em-nome"></div>
+          <div><label>Cidade/UF</label><input id="em-cidade"></div>
+          <div><label>CNPJ</label><input id="em-cnpj"></div>
+          <div><label>E-mail comercial</label><input id="em-email"></div>
+          <div><label>Telefone comercial</label><input id="em-fone"></div>
+          <div><label>Alertas de nova cotação (e-mails, separados por vírgula)</label><input id="em-alertas"></div>
+        </div>
+      </div></div>
+      <div class="card"><div class="card-h black">Equipe (perfis com acesso)</div><div class="card-b" id="p-equipe"></div></div>
+      <button class="btn" onclick="salvarParams()">Salvar parâmetros</button>
+      <span class="kv" id="p-okMsg" style="margin-left:10px"></span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer><span><b>Avalon Cargo</b> · Cotação comercial</span><span>Motor: rota real OSRM · piso ANTT (medições Qualp out/2026) · Supabase · v<span id="versao"></span></span></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/db.js"></script>
+<script src="assets/js/motor.js"></script>
+<script src="assets/js/proposta.js"></script>
+<script src="assets/js/app.js"></script>
+</body>
+</html>
