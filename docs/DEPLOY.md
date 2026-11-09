@@ -1,7 +1,7 @@
 # Deploy — Vercel + domínio avaloncargo.com.br
 
 ## 1. Vercel (uma vez)
-1. Em https://vercel.com → **Add New → Project** → importar `Avalon-Cargo/comercial-avalon-app` (GitHub).
+1. Em https://vercel.com → **Add New → Project** → importar `Avalon-Cargo/comercial-avalon` (GitHub).
 2. Framework preset: **Other**. Build command: vazio. Output directory: vazio (raiz). → **Deploy**.
 3. A cada `git push` na `main` a Vercel publica automaticamente.
 
