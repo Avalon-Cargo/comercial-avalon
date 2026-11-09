@@ -47,7 +47,7 @@ async function logout(){ await DB.sair(); perfil=null; ['navParams','btnSair','n
 /* ================= VISTA CLIENTE ================= */
 let cEquip='dry40';
 function renderEquipGrid(){
-  $('c-equipGrid').innerHTML=Object.entries(EQUIP).map(([k,e])=>'<div class="equip '+(k===cEquip?'on':'')+'" onclick="selEquip(\''+k+'\')"><b>'+e.nome+'</b><small>'+e.desc+'</small></div>').join('');
+  $('c-equipGrid').innerHTML=Object.entries(EQUIP).map(([k,e])=>'<div class="equip '+(k===cEquip?'on':'')+'" role="button" tabindex="0" aria-label="'+e.nome+'" onclick="selEquip(\''+k+'\')" onkeydown="if(event.key===\'Enter\')selEquip(\''+k+'\')"><b>'+e.nome+'</b><small>'+e.desc+'</small></div>').join('');
   const solta=cEquip==='carga_solta', oo=/opentop|flatrack/.test(cEquip);
   $('c-m3Box').style.display=solta?'block':'none'; $('c-csNote').style.display=solta?'block':'none'; $('c-ooNote').style.display=oo?'block':'none';
   $('c-pesoLbl').textContent=solta?'Peso bruto total (kg) *':'Peso bruto por contêiner (kg) *';
@@ -78,7 +78,7 @@ async function carregarFila(){
   $('fila').classList.remove('loading');
   if(!lista.length){$('fila').innerHTML='<div class="card"><div class="card-b" style="text-align:center;color:var(--muted);padding:34px">Nenhuma cotação neste filtro.</div></div>';return;}
   $('fila').innerHTML=lista.map(c=>{const st=STATUS[c.status]||[c.status,'gray']; const e=EQUIP[c.equipamento]||{nome:c.equipamento};
-    return '<div class="q-item" onclick="abrir(\''+c.id+'\')"><div><div class="t">'+c.empresa+' <span class="badge gray">'+c.protocolo+'</span>'+(c.imo?' <span class="badge red">IMO</span>':'')+(/reefer|opentop|flatrack/.test(c.equipamento)?' <span class="badge ana">'+e.nome+'</span>':'')+'</div><div class="m">'+c.origem+' → '+c.destino+' · '+e.nome+' ×'+c.qtde+' · '+c.mercadoria+' · '+dtBR(c.criado_em)+' · via '+c.canal+'</div></div><span class="badge '+st[1]+'">'+st[0]+'</span></div>';}).join('');
+    return '<div class="q-item" role="button" tabindex="0" aria-label="Abrir '+c.protocolo+'" onclick="abrir(\''+c.id+'\')" onkeydown="if(event.key===\'Enter\')abrir(\''+c.id+'\')"><div><div class="t">'+c.empresa+' <span class="badge gray">'+c.protocolo+'</span>'+(c.imo?' <span class="badge red">IMO</span>':'')+(/reefer|opentop|flatrack/.test(c.equipamento)?' <span class="badge ana">'+e.nome+'</span>':'')+'</div><div class="m">'+c.origem+' → '+c.destino+' · '+e.nome+' ×'+c.qtde+' · '+c.mercadoria+' · '+dtBR(c.criado_em)+' · via '+c.canal+'</div></div><span class="badge '+st[1]+'">'+st[0]+'</span></div>';}).join('');
 }
 async function novaManual(){
   const empresa=prompt('Nome da empresa / cliente:'); if(!empresa) return;
@@ -137,6 +137,7 @@ async function salvarFicha(){
     await sincronizarCotacao();
     const f=await DB.salvarFicha(c.id,coletarFicha(),window.__res||{},num('f-margemN'),perfil.id);
     if(c.status==='pendente'){ await mudarStatus('em_analise'); $('f-status').value='em_analise'; }
+    $('f-meta').innerHTML='Recebida <b>'+dtBR(c.criado_em)+'</b> via <b>'+c.canal+'</b> · ficha <b>v'+f.versao+'</b> salva em '+dtBR(f.criado_em||new Date().toISOString());
     toast('Ficha <b>v'+f.versao+'</b> salva no banco.'); return f;
   }catch(e){ toast('Erro ao salvar: '+e.message); }
 }
