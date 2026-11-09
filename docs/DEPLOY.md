@@ -24,3 +24,12 @@ O usuário nasce **inativo**; um gestor ativa em **Parâmetros → Equipe**. Tro
 
 ## 5. Migrations
 Aplicar os arquivos de `supabase/migrations/` em ordem no **SQL Editor**. Todo ajuste de banco entra como novo arquivo `000N_descricao.sql`.
+
+## Alerta de nova cotação por e-mail (Edge Function)
+
+1. Crie conta em https://resend.com e verifique o domínio `avaloncargo.com.br` (DNS: registros SPF/DKIM que o Resend mostra). Gere uma **API key**.
+2. Supabase → **Edge Functions → Deploy a new function** → nome `alerta-cotacao` → cole `supabase/functions/alerta-cotacao/index.ts`. Desmarque "Verify JWT" (o webhook não envia JWT; a função valida `x-webhook-secret`).
+3. Edge Functions → **Secrets**: `RESEND_API_KEY`, `ALERTA_FROM` (ex.: `Avalon Cotações <cotacao@avaloncargo.com.br>`), `APP_URL` (`https://cotacao.avaloncargo.com.br`), `WEBHOOK_SECRET` (string aleatória longa).
+4. SQL Editor: rode `supabase/migrations/0004_webhook_alerta.sql` trocando `<WEBHOOK_SECRET>` pelo mesmo valor.
+5. Destinatários: Parâmetros → Empresa → *Alertas de nova cotação* (salvo em `parametros.empresa.email_alerta`).
+6. Teste: envie uma cotação pelo site; o e-mail chega e o evento `alerta_email` aparece no histórico da ficha.
